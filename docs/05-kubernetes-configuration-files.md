@@ -12,7 +12,7 @@ When generating kubeconfig files for Kubelets the client certificate matching th
 
 > The following commands must be run in the same directory used to generate the SSL certificates during the [Generating TLS Certificates](04-certificate-authority.md) lab.
 
-Generate a kubeconfig file for the node-0 worker node:
+Generate a kubeconfig file for the worker nodes:
 
 ```bash
 for host in node-0 node-1; do
@@ -188,23 +188,28 @@ Copy the `kubelet` and `kube-proxy` kubeconfig files to the node-0 instance:
 
 ```bash
 for host in node-0 node-1; do
-  ssh root@$host "mkdir /var/lib/{kube-proxy,kubelet}"
+  key=~/.ssh/${host}_key.pem
+  ssh -i $key azureuser@$host "sudo mkdir -p /var/lib/{kube-proxy,kubelet}"
   
-  scp kube-proxy.kubeconfig \
-    root@$host:/var/lib/kube-proxy/kubeconfig \
+  scp -i $key kube-proxy.kubeconfig \
+    azureuser@$host:/tmp/kube-proxy.kubeconfig
+  ssh -i $key azureuser@$host \
+    "sudo mv /tmp/kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig"
   
-  scp ${host}.kubeconfig \
-    root@$host:/var/lib/kubelet/kubeconfig
+  scp -i $key ${host}.kubeconfig \
+    azureuser@$host:/tmp/${host}.kubeconfig
+  ssh -i $key azureuser@$host \
+    "sudo mv /tmp/${host}.kubeconfig  /var/lib/kubelet/kubeconfig"
 done
 ```
 
 Copy the `kube-controller-manager` and `kube-scheduler` kubeconfig files to the controller instance:
 
 ```bash
-scp admin.kubeconfig \
+scp -i ~/.ssh/server_key.pem admin.kubeconfig \
   kube-controller-manager.kubeconfig \
   kube-scheduler.kubeconfig \
-  root@server:~/
+  azureuser@server:~/
 ```
 
 Next: [Generating the Data Encryption Config and Key](06-data-encryption-keys.md)

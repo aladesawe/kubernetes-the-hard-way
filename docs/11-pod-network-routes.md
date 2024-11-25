@@ -10,41 +10,41 @@ In this lab you will create a route for each worker node that maps the node's Po
 
 In this section you will gather the information required to create routes in the `kubernetes-the-hard-way` VPC network.
 
-Print the internal IP address and Pod CIDR range for each worker instance:
+Print the internal IP address and Pod CIDR range for each worker instance (The IPs to be used for the routes may need to be link local, ran into bad gateway error while using the public ips):
 
 ```bash
 {
-  SERVER_IP=$(grep server machines.txt | cut -d " " -f 1)
-  NODE_0_IP=$(grep node-0 machines.txt | cut -d " " -f 1)
-  NODE_0_SUBNET=$(grep node-0 machines.txt | cut -d " " -f 4)
-  NODE_1_IP=$(grep node-1 machines.txt | cut -d " " -f 1)
-  NODE_1_SUBNET=$(grep node-1 machines.txt | cut -d " " -f 4)
+  SERVER_IP=$(grep server private_net_machines.txt | cut -d " " -f 1)
+  NODE_0_IP=$(grep node-0 private_net_machines.txt | cut -d " " -f 1)
+  NODE_0_SUBNET=$(grep node-0 private_net_machines.txt | cut -d " " -f 4)
+  NODE_1_IP=$(grep node-1 private_net_machines.txt | cut -d " " -f 1)
+  NODE_1_SUBNET=$(grep node-1 private_net_machines.txt | cut -d " " -f 4)
 }
 ```
 
 ```bash
-ssh root@server <<EOF
-  ip route add ${NODE_0_SUBNET} via ${NODE_0_IP}
-  ip route add ${NODE_1_SUBNET} via ${NODE_1_IP}
+ssh -i ~/.ssh/server_key.pem azureuser@server <<EOF
+  sudo ip route add ${NODE_0_SUBNET} via ${NODE_0_IP}
+  sudo ip route add ${NODE_1_SUBNET} via ${NODE_1_IP}
 EOF
 ```
 
 ```bash
-ssh root@node-0 <<EOF
-  ip route add ${NODE_1_SUBNET} via ${NODE_1_IP}
+ssh -i ~/.ssh/node-0_key.pem azureuser@node-0 <<EOF
+  sudo ip route add ${NODE_1_SUBNET} via ${NODE_1_IP}
 EOF
 ```
 
 ```bash
-ssh root@node-1 <<EOF
-  ip route add ${NODE_0_SUBNET} via ${NODE_0_IP}
+ssh -i ~/.ssh/node-1_key.pem azureuser@node-1 <<EOF
+  sudo ip route add ${NODE_0_SUBNET} via ${NODE_0_IP}
 EOF
 ```
 
 ## Verification 
 
 ```bash
-ssh root@server ip route
+ssh -i ~/.ssh/server_key.pem azureuser@server ip route
 ```
 
 ```text
@@ -55,7 +55,7 @@ XXX.XXX.XXX.0/24 dev ens160 proto kernel scope link src XXX.XXX.XXX.XXX
 ```
 
 ```bash
-ssh root@node-0 ip route
+ssh -i ~/.ssh/node-0_key.pem azureuser@node-0 ip route
 ```
 
 ```text
@@ -65,7 +65,7 @@ XXX.XXX.XXX.0/24 dev ens160 proto kernel scope link src XXX.XXX.XXX.XXX
 ```
 
 ```bash
-ssh root@node-1 ip route
+ssh -i ~/.ssh/node-1_key.pem azureuser@node-1 ip route
 ```
 
 ```text

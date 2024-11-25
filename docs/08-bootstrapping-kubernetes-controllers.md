@@ -8,6 +8,7 @@ Connect to the `jumpbox` and copy Kubernetes binaries and systemd unit files to 
 
 ```bash
 scp \
+  -i ~/.ssh/server_key.pem \
   downloads/kube-apiserver \
   downloads/kube-controller-manager \
   downloads/kube-scheduler \
@@ -17,13 +18,13 @@ scp \
   units/kube-scheduler.service \
   configs/kube-scheduler.yaml \
   configs/kube-apiserver-to-kubelet.yaml \
-  root@server:~/
+   azureuser@server:~/
 ```
 
 The commands in this lab must be run on the controller instance: `server`. Login to the controller instance using the `ssh` command. Example:
 
 ```bash
-ssh root@server
+ssh -i ~/.ssh/server_key.pem azureuser@server
 ```
 
 ## Provision the Kubernetes Control Plane
@@ -40,11 +41,11 @@ Install the Kubernetes binaries:
 
 ```bash
 {
-  chmod +x kube-apiserver \
+  sudo chmod +x kube-apiserver \
     kube-controller-manager \
     kube-scheduler kubectl
     
-  mv kube-apiserver \
+  sudo mv kube-apiserver \
     kube-controller-manager \
     kube-scheduler kubectl \
     /usr/local/bin/
@@ -55,9 +56,9 @@ Install the Kubernetes binaries:
 
 ```bash
 {
-  mkdir -p /var/lib/kubernetes/
+  sudo mkdir -p /var/lib/kubernetes/
 
-  mv ca.crt ca.key \
+  sudo mv ca.crt ca.key \
     kube-api-server.key kube-api-server.crt \
     service-accounts.key service-accounts.crt \
     encryption-config.yaml \
@@ -68,7 +69,7 @@ Install the Kubernetes binaries:
 Create the `kube-apiserver.service` systemd unit file:
 
 ```bash
-mv kube-apiserver.service \
+sudo mv kube-apiserver.service \
   /etc/systemd/system/kube-apiserver.service
 ```
 
@@ -77,13 +78,13 @@ mv kube-apiserver.service \
 Move the `kube-controller-manager` kubeconfig into place:
 
 ```bash
-mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
+sudo mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
 ```
 
 Create the `kube-controller-manager.service` systemd unit file:
 
 ```bash
-mv kube-controller-manager.service /etc/systemd/system/
+sudo mv kube-controller-manager.service /etc/systemd/system/
 ```
 
 ### Configure the Kubernetes Scheduler
@@ -91,32 +92,32 @@ mv kube-controller-manager.service /etc/systemd/system/
 Move the `kube-scheduler` kubeconfig into place:
 
 ```bash
-mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
 ```
 
 Create the `kube-scheduler.yaml` configuration file:
 
 ```bash
-mv kube-scheduler.yaml /etc/kubernetes/config/
+sudo mv kube-scheduler.yaml /etc/kubernetes/config/
 ```
 
 Create the `kube-scheduler.service` systemd unit file:
 
 ```bash
-mv kube-scheduler.service /etc/systemd/system/
+sudo mv kube-scheduler.service /etc/systemd/system/
 ```
 
 ### Start the Controller Services
-
+### NOTE: Ran the following from the jumpbox
 ```bash
 {
-  systemctl daemon-reload
+  ssh -i ~/.ssh/server_key.pem azureuser@server "sudo systemctl daemon-reload"
   
-  systemctl enable kube-apiserver \
-    kube-controller-manager kube-scheduler
+  ssh -i ~/.ssh/server_key.pem azureuser@server "sudo systemctl enable kube-apiserver \
+    kube-controller-manager kube-scheduler"
     
-  systemctl start kube-apiserver \
-    kube-controller-manager kube-scheduler
+  ssh -i ~/.ssh/server_key.pem azureuser@server "sudo systemctl start kube-apiserver \
+    kube-controller-manager kube-scheduler"
 }
 ```
 
@@ -143,7 +144,7 @@ In this section you will configure RBAC permissions to allow the Kubernetes API 
 The commands in this section will affect the entire cluster and only need to be run on the controller node.
 
 ```bash
-ssh root@server
+ssh -i ~/.ssh/server_key.pem azureuser@server
 ```
 
 Create the `system:kube-apiserver-to-kubelet` [ClusterRole](https://kubernetes.io/docs/admin/authorization/rbac/#role-and-clusterrole) with permissions to access the Kubelet API and perform most common tasks associated with managing pods:

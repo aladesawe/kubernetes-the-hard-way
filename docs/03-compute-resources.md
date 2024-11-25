@@ -66,7 +66,7 @@ ssh-keygen
 
 ```text
 Generating public/private rsa key pair.
-Enter file in which to save the key (/root/.ssh/id_rsa): 
+Enter file in which to save the key (/root/.ssh/id_rsa): k8s_hard_way_rsa
 Enter passphrase (empty for no passphrase): 
 Enter same passphrase again: 
 Your identification has been saved in /root/.ssh/id_rsa
@@ -76,16 +76,16 @@ Your public key has been saved in /root/.ssh/id_rsa.pub
 Copy the SSH public key to each machine:
 
 ```bash
-while read IP FQDN HOST SUBNET; do 
-  ssh-copy-id root@${IP}
+while read IP FQDN HOST IDENTITY SUBNET; do 
+  ssh-copy-id -i k8s_hard_way_rsa azureuser@${IP}
 done < machines.txt
 ```
 
 Once each key is added, verify SSH public key access is working:
 
 ```bash
-while read IP FQDN HOST SUBNET; do 
-  ssh -n root@${IP} uname -o -m
+while read IP FQDN HOST IDENTITY SUBNET; do 
+  ssh -i ${IDENTITY} -n azureuser@${IP} uname -o -m
 done < machines.txt
 ```
 
@@ -104,18 +104,18 @@ To configure the hostname for each machine, run the following commands on the `j
 Set the hostname on each machine listed in the `machines.txt` file:
 
 ```bash
-while read IP FQDN HOST SUBNET; do 
-    CMD="sed -i 's/^127.0.1.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
-    ssh -n root@${IP} "$CMD"
-    ssh -n root@${IP} hostnamectl hostname ${HOST}
+while read IP FQDN HOST IDENTITY SUBNET; do 
+    CMD="sudo sed -i 's/^127.0.0.1.*/127.0.0.1\t${FQDN} ${HOST}/' /etc/hosts"
+    ssh -i ${IDENTITY} -n azureuser@${IP} "$CMD"
+    ssh -i ${IDENTITY} -n azureuser@${IP} sudo hostnamectl hostname ${HOST}
 done < machines.txt
 ```
 
-Verify the hostname is set on each machine:
+Verify the hostname is set on each machine:m
 
 ```bash
-while read IP FQDN HOST SUBNET; do
-  ssh -n root@${IP} hostname --fqdn
+while read IP FQDN HOST IDENTITY SUBNET; do
+  ssh -i ${IDENTITY} -n azureuser@${IP} hostname --fqdn
 done < machines.txt
 ```
 
@@ -139,7 +139,7 @@ echo "# Kubernetes The Hard Way" >> hosts
 Generate a host entry for each machine in the `machines.txt` file and append it to the `hosts` file:
 
 ```bash
-while read IP FQDN HOST SUBNET; do 
+while read IP FQDN HOST IDENTITY SUBNET; do 
     ENTRY="${IP} ${FQDN} ${HOST}"
     echo $ENTRY >> hosts
 done < machines.txt
@@ -196,8 +196,16 @@ At this point you should be able to SSH to each machine listed in the `machines.
 
 ```bash
 for host in server node-0 node-1
-   do ssh root@${host} uname -o -m -n
+   do ssh azureuser@${host} uname -o -m -n
 done
+```
+
+or 
+
+```bash
+while read IP FQDN HOST IDENTITY SUBNET; do 
+  ssh -i ${IDENTITY} -n azureuser@${HOST} uname -o -m -n
+done < machines.txt
 ```
 
 ```text
@@ -213,10 +221,10 @@ In this section you will append the host entries from `hosts` to `/etc/hosts` on
 Copy the `hosts` file to each machine and append the contents to `/etc/hosts`:
 
 ```bash
-while read IP FQDN HOST SUBNET; do
-  scp hosts root@${HOST}:~/
-  ssh -n \
-    root@${HOST} "cat hosts >> /etc/hosts"
+while read IP FQDN HOST IDENTITY SUBNET; do
+  scp -i ${IDENTITY} hosts azureuser@${HOST}:~/
+  ssh -i ${IDENTITY} -n \
+    azureuser@${HOST} "cat hosts | sudo tee -a /etc/hosts > /dev/null"
 done < machines.txt
 ```
 

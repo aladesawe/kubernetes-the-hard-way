@@ -16,7 +16,7 @@ kubectl create secret generic kubernetes-the-hard-way \
 Print a hexdump of the `kubernetes-the-hard-way` secret stored in etcd:
 
 ```bash
-ssh root@server \
+ssh -i ~/.ssh/server_key.pem azureuser@server \
     'etcdctl get /registry/secrets/default/kubernetes-the-hard-way | hexdump -C'
 ```
 
@@ -165,7 +165,7 @@ Retrieve the node port assigned to the `nginx` service:
 
 ```bash
 NODE_PORT=$(kubectl get svc nginx \
-  --output=jsonpath='{range .spec.ports[0]}{.nodePort}')
+  --output=jsonpath='{.spec.ports[0].nodePort}')
 ```
 
 
